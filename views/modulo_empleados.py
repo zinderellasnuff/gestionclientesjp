@@ -569,7 +569,7 @@ class GestionEmpleados:
             cursor = conn.cursor()
 
             # Llamar al procedimiento almacenado
-            query = "CALL sp_insertar_empleado(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            query = "CALL insertar_empleado(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
             valores = (
                 int(codigo),
@@ -638,7 +638,7 @@ class GestionEmpleados:
             cursor = conn.cursor()
 
             # Llamar al procedimiento almacenado
-            query = "CALL sp_actualizar_empleado(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            query = "CALL actualizar_empleado(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
             valores = (
                 self.codigo_seleccionado,
@@ -685,7 +685,7 @@ class GestionEmpleados:
             conn = Database.conectar()
             cursor = conn.cursor()
 
-            query = "CALL sp_eliminar_empleado(%s)"
+            query = "CALL eliminar_empleado(%s)"
             cursor.execute(query, (self.codigo_seleccionado,))
             conn.commit()
 

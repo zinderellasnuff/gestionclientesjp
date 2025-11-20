@@ -465,7 +465,7 @@ class ConsultaSUNAT:
             cursor = conn.cursor()
 
             # Llamar al procedimiento almacenado
-            query = "CALL sp_insertar_consulta_sunat(%s, %s, %s, %s, %s)"
+            query = "CALL insertar_consulta_sunat(%s, %s, %s, %s, %s)"
 
             valores = (
                 nro_consultado,

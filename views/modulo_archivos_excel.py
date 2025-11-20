@@ -452,7 +452,7 @@ class GestionArchivosExcel:
             cursor = conn.cursor()
 
             # Llamar al procedimiento almacenado
-            query = "CALL sp_insertar_archivo_excel(%s, %s, %s)"
+            query = "CALL insertar_archivo_excel(%s, %s, %s)"
 
             valores = (nombre, fecha_creacion, fecha_modificacion)
 
@@ -489,7 +489,7 @@ class GestionArchivosExcel:
             cursor = conn.cursor()
 
             # Llamar al procedimiento almacenado
-            query = "CALL sp_actualizar_archivo_excel(%s, %s)"
+            query = "CALL actualizar_archivo_excel(%s, %s)"
 
             valores = (self.nombre_seleccionado, fecha_modificacion)
 

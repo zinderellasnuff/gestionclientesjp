@@ -1,7 +1,7 @@
 -- =====================================================
 -- PROCEDIMIENTOS ALMACENADOS - Adaptados a estructura REAL
 -- Sistema de Gestión de Clientes JP
--- Versión: 2.1 (Sin prefijo sp_)
+-- Versión: 2.0
 -- =====================================================
 
 USE gestion_clientes_jp;
@@ -15,8 +15,8 @@ DELIMITER $$
 -- =====================================================
 
 -- Insertar cliente
-DROP PROCEDURE IF EXISTS insertar_cliente$$
-CREATE PROCEDURE insertar_cliente(
+DROP PROCEDURE IF EXISTS sp_insertar_cliente$$
+CREATE PROCEDURE sp_insertar_cliente(
     IN p_ruc CHAR(11),
     IN p_nombres VARCHAR(50),
     IN p_apellido_paterno VARCHAR(50),
@@ -44,8 +44,8 @@ BEGIN
 END$$
 
 -- Actualizar cliente
-DROP PROCEDURE IF EXISTS actualizar_cliente$$
-CREATE PROCEDURE actualizar_cliente(
+DROP PROCEDURE IF EXISTS sp_actualizar_cliente$$
+CREATE PROCEDURE sp_actualizar_cliente(
     IN p_ruc CHAR(11),
     IN p_nombres VARCHAR(50),
     IN p_apellido_paterno VARCHAR(50),
@@ -77,8 +77,8 @@ BEGIN
 END$$
 
 -- Eliminar cliente
-DROP PROCEDURE IF EXISTS eliminar_cliente$$
-CREATE PROCEDURE eliminar_cliente(
+DROP PROCEDURE IF EXISTS sp_eliminar_cliente$$
+CREATE PROCEDURE sp_eliminar_cliente(
     IN p_ruc CHAR(11)
 )
 BEGIN
@@ -96,28 +96,6 @@ BEGIN
     SELECT ROW_COUNT() AS filas_afectadas;
 END$$
 
--- Buscar cliente por RUC
-DROP PROCEDURE IF EXISTS buscar_cliente_por_ruc$$
-CREATE PROCEDURE buscar_cliente_por_ruc(
-    IN p_ruc CHAR(11)
-)
-BEGIN
-    SELECT ruc, nombres, apellido_paterno, apellido_materno,
-           correo_electronico, pagina_web, telefono
-    FROM cliente
-    WHERE ruc = p_ruc;
-END$$
-
--- Listar todos los clientes
-DROP PROCEDURE IF EXISTS listar_clientes$$
-CREATE PROCEDURE listar_clientes()
-BEGIN
-    SELECT ruc, nombres, apellido_paterno, apellido_materno,
-           correo_electronico, pagina_web, telefono
-    FROM cliente
-    ORDER BY nombres, apellido_paterno;
-END$$
-
 -- =====================================================
 -- PROCEDIMIENTOS PARA: empleado
 -- Estructura REAL: codigo, sexo, cargo, fecha_nacimiento, nombres,
@@ -125,8 +103,8 @@ END$$
 -- =====================================================
 
 -- Insertar empleado
-DROP PROCEDURE IF EXISTS insertar_empleado$$
-CREATE PROCEDURE insertar_empleado(
+DROP PROCEDURE IF EXISTS sp_insertar_empleado$$
+CREATE PROCEDURE sp_insertar_empleado(
     IN p_codigo INT,
     IN p_sexo VARCHAR(10),
     IN p_cargo VARCHAR(50),
@@ -156,8 +134,8 @@ BEGIN
 END$$
 
 -- Actualizar empleado
-DROP PROCEDURE IF EXISTS actualizar_empleado$$
-CREATE PROCEDURE actualizar_empleado(
+DROP PROCEDURE IF EXISTS sp_actualizar_empleado$$
+CREATE PROCEDURE sp_actualizar_empleado(
     IN p_codigo INT,
     IN p_sexo VARCHAR(10),
     IN p_cargo VARCHAR(50),
@@ -193,8 +171,8 @@ BEGIN
 END$$
 
 -- Eliminar empleado
-DROP PROCEDURE IF EXISTS eliminar_empleado$$
-CREATE PROCEDURE eliminar_empleado(
+DROP PROCEDURE IF EXISTS sp_eliminar_empleado$$
+CREATE PROCEDURE sp_eliminar_empleado(
     IN p_codigo INT
 )
 BEGIN
@@ -212,24 +190,14 @@ BEGIN
     SELECT ROW_COUNT() AS filas_afectadas;
 END$$
 
--- Listar empleados
-DROP PROCEDURE IF EXISTS listar_empleados$$
-CREATE PROCEDURE listar_empleados()
-BEGIN
-    SELECT codigo, sexo, cargo, fecha_nacimiento, nombres,
-           apellido_paterno, apellido_materno, ruc_cliente, nombre_archivo
-    FROM empleado
-    ORDER BY nombres, apellido_paterno;
-END$$
-
 -- =====================================================
 -- PROCEDIMIENTOS PARA: consulta_sunat
 -- Estructura REAL: nro_consultado, codigo_empleado, razon_social, estado, condicion
 -- =====================================================
 
 -- Insertar consulta SUNAT
-DROP PROCEDURE IF EXISTS insertar_consulta_sunat$$
-CREATE PROCEDURE insertar_consulta_sunat(
+DROP PROCEDURE IF EXISTS sp_insertar_consulta_sunat$$
+CREATE PROCEDURE sp_insertar_consulta_sunat(
     IN p_nro_consultado VARCHAR(20),
     IN p_codigo_empleado INT,
     IN p_razon_social VARCHAR(200),
@@ -252,23 +220,14 @@ BEGIN
     SELECT 'Consulta SUNAT insertada' AS mensaje;
 END$$
 
--- Listar consultas SUNAT
-DROP PROCEDURE IF EXISTS listar_consultas_sunat$$
-CREATE PROCEDURE listar_consultas_sunat()
-BEGIN
-    SELECT nro_consultado, codigo_empleado, razon_social, estado, condicion
-    FROM consulta_sunat
-    ORDER BY nro_consultado;
-END$$
-
 -- =====================================================
 -- PROCEDIMIENTOS PARA: archivo_excel_gestion_clientes
 -- Estructura REAL: nombre, fecha_creacion, fecha_modificacion
 -- =====================================================
 
 -- Insertar archivo Excel
-DROP PROCEDURE IF EXISTS insertar_archivo_excel$$
-CREATE PROCEDURE insertar_archivo_excel(
+DROP PROCEDURE IF EXISTS sp_insertar_archivo_excel$$
+CREATE PROCEDURE sp_insertar_archivo_excel(
     IN p_nombre VARCHAR(100),
     IN p_fecha_creacion DATETIME,
     IN p_fecha_modificacion DATETIME
@@ -290,8 +249,8 @@ BEGIN
 END$$
 
 -- Actualizar archivo Excel
-DROP PROCEDURE IF EXISTS actualizar_archivo_excel$$
-CREATE PROCEDURE actualizar_archivo_excel(
+DROP PROCEDURE IF EXISTS sp_actualizar_archivo_excel$$
+CREATE PROCEDURE sp_actualizar_archivo_excel(
     IN p_nombre VARCHAR(100),
     IN p_fecha_modificacion DATETIME
 )
@@ -318,4 +277,4 @@ DELIMITER ;
 -- MENSAJE DE CONFIRMACIÓN
 -- =====================================================
 SELECT '✓✓✓ Procedimientos almacenados creados exitosamente ✓✓✓' AS Mensaje;
-SELECT '✓ Sin prefijo sp_ para coincidir con llamadas Python' AS Mensaje;
+SELECT '✓ Adaptados a estructura real de base de datos' AS Mensaje;
