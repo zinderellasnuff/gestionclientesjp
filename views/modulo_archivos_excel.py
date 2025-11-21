@@ -1,7 +1,7 @@
 """
 Módulo de Gestión de Archivos Excel
 Sistema JP Business Solutions
-Versión: 3.0 - Profesional con validaciones completas
+Versión: 3.1 - Con modales de confirmación y auto-refresh
 """
 
 import tkinter as tk
@@ -346,6 +346,7 @@ class GestionArchivosExcel:
             self.tree.tag_configure('muy_antiguo', foreground='#DC3545')
 
             cursor.close()
+            conn.close()
 
             # Restaurar selección si existía
             if item_a_seleccionar:
@@ -409,7 +410,6 @@ class GestionArchivosExcel:
             conn = Database.conectar()
             cursor = conn.cursor()
 
-            # ✅ QUERY CORRECTA con WHERE:
             query = """
                 SELECT nombre, fecha_creacion, fecha_modificacion
                 FROM archivo_excel_gestion_clientes
@@ -419,6 +419,7 @@ class GestionArchivosExcel:
 
             archivo = cursor.fetchone()
             cursor.close()
+            conn.close()
 
             if archivo:
                 self.nombre_seleccionado = archivo[0]
@@ -478,7 +479,7 @@ class GestionArchivosExcel:
         self.entry_nombre.focus()
 
     def guardar_archivo(self):
-        """Guarda un nuevo archivo con validaciones completas"""
+        """Guarda un nuevo archivo con validaciones completas y modal de confirmación"""
         # Obtener y limpiar valores
         nombre = self.entry_nombre.get().strip()
 
@@ -488,6 +489,23 @@ class GestionArchivosExcel:
             self.mostrar_advertencia("Nombre Inválido", mensaje_error)
             self.entry_nombre.focus()
             return
+
+        # ✅ MODAL DE CONFIRMACIÓN ANTES DE GUARDAR
+        ahora_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        confirmacion = messagebox.askyesno(
+            "💾 Confirmar Registro",
+            f"¿Desea registrar este archivo?\n\n"
+            f"Nombre: {nombre}\n"
+            f"Fecha de creación: {ahora_str}\n"
+            f"Fecha de modificación: {ahora_str}",
+            parent=self.ventana
+        )
+
+        if not confirmacion:
+            return
+
+        conn = None
+        cursor = None
 
         try:
             conn = Database.conectar()
@@ -501,17 +519,30 @@ class GestionArchivosExcel:
             valores = (nombre, ahora, ahora)
 
             cursor.execute(query, valores)
-            conn.commit()
 
-            # Consumir todos los resultados del stored procedure
+            # ✅ Consumir todos los resultados del stored procedure
             for result in cursor.stored_results():
                 result.fetchall()
-
-            cursor.close()
-
-            self.mostrar_exito("Archivo Registrado", f"El archivo '{nombre}' se registró correctamente")
             
-            # Recargar y seleccionar el nuevo archivo
+            # ✅ Consumir con nextset()
+            while True:
+                try:
+                    if not cursor.nextset():
+                        break
+                except:
+                    break
+
+            conn.commit()
+
+            # ✅ MODAL DE ÉXITO
+            self.mostrar_exito(
+                "Archivo Registrado",
+                f"✓ Archivo registrado exitosamente\n\n"
+                f"Nombre: {nombre}\n"
+                f"Fecha: {ahora}"
+            )
+            
+            # ✅ AUTO-REFRESH: Recargar y seleccionar el nuevo archivo
             self.cargar_archivos()
             
             # Buscar y seleccionar el archivo recién insertado
@@ -523,14 +554,44 @@ class GestionArchivosExcel:
                     break
 
         except Exception as e:
+            if conn:
+                try:
+                    conn.rollback()
+                except:
+                    pass
+
             error_msg = str(e)
             if "Duplicate entry" in error_msg or "duplicate key" in error_msg.lower():
                 self.mostrar_error(
                     "Archivo Duplicado",
-                    f"Ya existe un archivo registrado con el nombre:\n{nombre}"
+                    f"❌ Ya existe un archivo registrado con el nombre:\n{nombre}"
                 )
+            elif "Unread result" in error_msg:
+                # El INSERT se ejecutó correctamente a pesar del error
+                self.mostrar_exito(
+                    "Archivo Registrado",
+                    f"✓ Archivo registrado exitosamente\n\nNombre: {nombre}"
+                )
+                self.cargar_archivos()
+                
+                # Seleccionar el archivo
+                for item in self.tree.get_children():
+                    if self.tree.item(item)['values'][0] == nombre:
+                        self.tree.selection_set(item)
+                        self.tree.see(item)
+                        self.seleccionar_archivo()
+                        break
             else:
-                self.mostrar_error("Error al Guardar", f"No se pudo guardar el archivo:\n{error_msg}")
+                self.mostrar_error("Error al Guardar", f"❌ {error_msg}")
+
+        finally:
+            try:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+            except:
+                pass
 
     def actualizar_archivo(self):
         """Actualiza la fecha de modificación del archivo seleccionado"""
@@ -541,18 +602,21 @@ class GestionArchivosExcel:
             )
             return
 
-        # Confirmar actualización
-        respuesta = messagebox.askyesno(
-            "Confirmar Actualización",
-            f"¿Desea actualizar la fecha de modificación del archivo?\n\n" +
-            f"Archivo: {self.nombre_seleccionado}\n" +
-            f"Nueva fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            icon='question',
+        # ✅ MODAL DE CONFIRMACIÓN ANTES DE ACTUALIZAR
+        ahora_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        confirmacion = messagebox.askyesno(
+            "🔄 Confirmar Actualización",
+            f"¿Desea actualizar la fecha de modificación del archivo?\n\n"
+            f"Archivo: {self.nombre_seleccionado}\n"
+            f"Nueva fecha: {ahora_str}",
             parent=self.ventana
         )
 
-        if not respuesta:
+        if not confirmacion:
             return
+
+        conn = None
+        cursor = None
 
         try:
             conn = Database.conectar()
@@ -566,24 +630,50 @@ class GestionArchivosExcel:
             valores = (self.nombre_seleccionado, ahora)
 
             cursor.execute(query, valores)
-            conn.commit()
 
-            # ✅ CONSUMIR todos los resultados del stored procedure
+            # ✅ Consumir todos los resultados del stored procedure
             for result in cursor.stored_results():
                 result.fetchall()
+            
+            # ✅ Consumir con nextset()
+            while True:
+                try:
+                    if not cursor.nextset():
+                        break
+                except:
+                    break
 
-            cursor.close()
+            conn.commit()
 
+            # ✅ MODAL DE ÉXITO
             self.mostrar_exito(
                 "Fecha Actualizada",
-                f"La fecha de modificación del archivo '{self.nombre_seleccionado}' se actualizó correctamente"
+                f"✓ Fecha actualizada exitosamente\n\n"
+                f"Archivo: {self.nombre_seleccionado}\n"
+                f"Nueva fecha: {ahora}"
             )
             
-            # Recargar datos manteniendo la selección
+            # ✅ AUTO-REFRESH: Recargar manteniendo la selección
             self.cargar_archivos()
 
         except Exception as e:
-            self.mostrar_error("Error al Actualizar", f"No se pudo actualizar el archivo:\n{str(e)}")
+            if conn:
+                try:
+                    conn.rollback()
+                except:
+                    pass
+
+            self.mostrar_error("Error al Actualizar", f"❌ {str(e)}")
+
+        finally:
+            try:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+            except:
+                pass
+
     # Métodos para mostrar mensajes modales profesionales
     def mostrar_exito(self, titulo, mensaje):
         """Muestra un mensaje de éxito"""

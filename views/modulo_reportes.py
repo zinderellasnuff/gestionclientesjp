@@ -1,12 +1,14 @@
 """
 Módulo de Reportes y Análisis
 Sistema JP Business Solutions
-Versión: 2.0 - Adaptado a estructura real de BD
+Versión: 3.1 - Con modales de confirmación y feedback mejorado
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from models.config_db import Database
+import csv
+from datetime import datetime
 
 class ModuloReportes:
     def __init__(self, parent):
@@ -14,6 +16,14 @@ class ModuloReportes:
         self.ventana.title("Reportes y Análisis - JP Business Solutions")
         self.ventana.geometry("1400x800")
         self.ventana.configure(bg="#F5F5F5")
+        
+        # Configurar para que se cierre correctamente
+        self.ventana.protocol("WM_DELETE_WINDOW", self.cerrar_ventana)
+
+        # Variables
+        self.ultimo_reporte_datos = []
+        self.ultimo_reporte_columnas = []
+        self.ultimo_reporte_nombre = ""
 
         # Diccionario de reportes con sus consultas SQL
         self.reportes = {
@@ -278,6 +288,10 @@ class ModuloReportes:
 
         self.crear_interfaz()
 
+    def cerrar_ventana(self):
+        """Cierra la ventana correctamente"""
+        self.ventana.destroy()
+
     def crear_interfaz(self):
         # Header
         header = tk.Frame(self.ventana, bg="#6F42C1", height=70)
@@ -285,7 +299,7 @@ class ModuloReportes:
 
         titulo = tk.Label(
             header,
-            text="REPORTES Y ANÁLISIS",
+            text="📊 REPORTES Y ANÁLISIS",
             font=("Segoe UI", 16, "bold"),
             bg="#6F42C1",
             fg="white"
@@ -360,21 +374,38 @@ class ModuloReportes:
         )
         self.lbl_descripcion.pack(anchor="w", padx=10, pady=(0, 10))
 
-        # Botón generar
+        # Botones de acción
+        btn_frame = tk.Frame(panel_izq, bg="white")
+        btn_frame.pack(pady=15)
+
+        btn_style = {
+            "font": ("Segoe UI", 10, "bold"),
+            "cursor": "hand2",
+            "width": 18,
+            "bd": 0,
+            "relief": "flat",
+            "pady": 10
+        }
+
         btn_generar = tk.Button(
-            panel_izq,
-            text="Generar Reporte",
-            font=("Segoe UI", 11, "bold"),
+            btn_frame,
+            text="📄 Generar Reporte",
             bg="#6F42C1",
             fg="white",
             command=self.generar_reporte,
-            cursor="hand2",
-            width=20,
-            height=2,
-            bd=0,
-            relief="flat"
+            **btn_style
         )
-        btn_generar.pack(pady=15)
+        btn_generar.pack(pady=5)
+
+        btn_exportar = tk.Button(
+            btn_frame,
+            text="💾 Exportar a CSV",
+            bg="#28A745",
+            fg="white",
+            command=self.exportar_csv,
+            **btn_style
+        )
+        btn_exportar.pack(pady=5)
 
         # Panel derecho - Visualización
         panel_der = tk.Frame(main_container, bg="white", relief=tk.RAISED, bd=2)
@@ -436,18 +467,40 @@ class ModuloReportes:
             self.lbl_descripcion.config(text=self.reportes[indice]["descripcion"])
 
     def generar_reporte(self):
-        """Genera el reporte seleccionado"""
+        """Genera el reporte seleccionado con modal de confirmación"""
         seleccion = self.reportes_listbox.curselection()
         if not seleccion:
-            messagebox.showwarning("Advertencia", "Seleccione un reporte de la lista")
+            self.mostrar_advertencia("Sin Selección", "Seleccione un reporte de la lista")
             return
 
         indice = seleccion[0]
         reporte = self.reportes[indice]
 
+        # ✅ MODAL DE CONFIRMACIÓN ANTES DE GENERAR
+        confirmacion = messagebox.askyesno(
+            "📄 Confirmar Generación",
+            f"¿Desea generar este reporte?\n\n"
+            f"{reporte['nombre']}\n\n"
+            f"{reporte['descripcion']}",
+            parent=self.ventana
+        )
+
+        if not confirmacion:
+            return
+
+        # Mostrar mensaje de procesamiento
+        self.lbl_info.config(
+            text="⏳ Generando reporte, por favor espere...",
+            fg="#FFC107"
+        )
+        self.ventana.update()
+
         # Limpiar tree
         for item in self.tree.get_children():
             self.tree.delete(item)
+
+        conn = None
+        cursor = None
 
         try:
             conn = Database.conectar()
@@ -457,27 +510,119 @@ class ModuloReportes:
             cursor.execute(reporte["query"])
             resultados = cursor.fetchall()
 
+            # Guardar datos para exportación
+            self.ultimo_reporte_datos = resultados
+            self.ultimo_reporte_columnas = reporte["columnas"]
+            self.ultimo_reporte_nombre = reporte["nombre"]
+
             # Configurar columnas
             self.configurar_columnas(reporte["columnas"])
 
             # Insertar datos en el tree
             for fila in resultados:
-                self.tree.insert("", tk.END, values=fila)
+                # Convertir None a string vacío para mejor visualización
+                fila_limpia = tuple("" if val is None else val for val in fila)
+                self.tree.insert("", tk.END, values=fila_limpia)
 
-            cursor.close()
+            # ✅ MODAL DE ÉXITO con estadísticas
+            self.mostrar_exito(
+                "Reporte Generado",
+                f"✓ Reporte generado exitosamente\n\n"
+                f"Total de registros: {len(resultados)}\n"
+                f"Columnas: {len(reporte['columnas'])}"
+            )
 
             # Actualizar info
             self.lbl_info.config(
-                text=f"Reporte generado exitosamente: {len(resultados)} registros encontrados",
+                text=f"✓ Reporte generado: {len(resultados)} registros encontrados | "
+                     f"{len(reporte['columnas'])} columnas",
                 fg="#28A745"
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error al generar reporte:\n{str(e)}")
+            self.mostrar_error("Error al Generar Reporte", f"❌ {str(e)}")
             self.lbl_info.config(
-                text=f"Error al generar reporte: {str(e)}",
+                text="✗ Error al generar reporte",
                 fg="#DC3545"
             )
+        finally:
+            try:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+            except:
+                pass
+
+    def exportar_csv(self):
+        """Exporta el reporte actual a CSV con modal de confirmación"""
+        if not self.ultimo_reporte_datos:
+            self.mostrar_advertencia(
+                "Sin Datos",
+                "Primero debe generar un reporte antes de exportar"
+            )
+            return
+
+        # ✅ MODAL DE CONFIRMACIÓN ANTES DE EXPORTAR
+        confirmacion = messagebox.askyesno(
+            "💾 Confirmar Exportación",
+            f"¿Desea exportar este reporte a CSV?\n\n"
+            f"Reporte: {self.ultimo_reporte_nombre}\n"
+            f"Registros: {len(self.ultimo_reporte_datos)}\n"
+            f"Columnas: {len(self.ultimo_reporte_columnas)}",
+            parent=self.ventana
+        )
+
+        if not confirmacion:
+            return
+
+        try:
+            # Generar nombre de archivo por defecto
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            nombre_default = f"reporte_{timestamp}.csv"
+
+            # Diálogo para guardar archivo
+            archivo = filedialog.asksaveasfilename(
+                parent=self.ventana,
+                title="Guardar Reporte como CSV",
+                defaultextension=".csv",
+                initialfile=nombre_default,
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+            )
+
+            if not archivo:
+                return
+
+            # Escribir CSV
+            with open(archivo, 'w', newline='', encoding='utf-8-sig') as csvfile:
+                writer = csv.writer(csvfile)
+                
+                # Escribir encabezados
+                writer.writerow(self.ultimo_reporte_columnas)
+                
+                # Escribir datos
+                for fila in self.ultimo_reporte_datos:
+                    # Convertir None a string vacío
+                    fila_limpia = ["" if val is None else str(val) for val in fila]
+                    writer.writerow(fila_limpia)
+
+            # ✅ MODAL DE ÉXITO
+            self.mostrar_exito(
+                "Exportación Exitosa",
+                f"✓ Reporte exportado exitosamente\n\n"
+                f"Archivo: {archivo.split('/')[-1]}\n"
+                f"Registros exportados: {len(self.ultimo_reporte_datos)}\n"
+                f"Ubicación: {archivo}"
+            )
+
+            # Actualizar info
+            self.lbl_info.config(
+                text=f"✓ Exportado: {len(self.ultimo_reporte_datos)} registros → {archivo.split('/')[-1]}",
+                fg="#28A745"
+            )
+
+        except Exception as e:
+            self.mostrar_error("Error al Exportar", f"❌ No se pudo exportar el archivo:\n{str(e)}")
 
     def configurar_columnas(self, columnas):
         """Configura las columnas del treeview"""
@@ -494,3 +639,16 @@ class ModuloReportes:
             else:
                 ancho = 120
             self.tree.column(col, width=ancho, anchor="w")
+
+    # Métodos de mensajes modales
+    def mostrar_exito(self, titulo, mensaje):
+        """Muestra mensaje de éxito"""
+        messagebox.showinfo(f"✓ {titulo}", mensaje, parent=self.ventana)
+
+    def mostrar_error(self, titulo, mensaje):
+        """Muestra mensaje de error"""
+        messagebox.showerror(f"✗ {titulo}", mensaje, parent=self.ventana)
+
+    def mostrar_advertencia(self, titulo, mensaje):
+        """Muestra mensaje de advertencia"""
+        messagebox.showwarning(f"⚠ {titulo}", mensaje, parent=self.ventana)

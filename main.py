@@ -6,6 +6,7 @@ from views.modulo_empleados import GestionEmpleados
 from views.modulo_consulta_sunat import ConsultaSUNAT
 from views.modulo_archivos_excel import GestionArchivosExcel
 from views.modulo_reportes import ModuloReportes
+from views.modulo_configuracion import ModuloConfiguracion
 
 class AplicativoJP:
 
@@ -291,16 +292,10 @@ class AplicativoJP:
 
     def configuracion(self):
         """Muestra el módulo de configuración"""
-        messagebox.showinfo(
-            "Configuración del Sistema",
-            "Módulo de configuración en desarrollo.\n\n" +
-            "Funcionalidades previstas:\n" +
-            "- Gestión de usuarios\n" +
-            "- Permisos y roles\n" +
-            "- Parámetros del sistema\n" +
-            "- Respaldo de base de datos"
-        )
-
+        try:
+            ModuloConfiguracion(self.root)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al abrir Configuración:\n{str(e)}")
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -1,382 +1,248 @@
 -- =====================================================
--- TRIGGERS DE AUDITORÍA
--- Sistema de Gestión de Clientes JP
+-- TRIGGERS - Sistema de Gestión de Clientes JP
+-- Versión: 1.0 - Adaptado a estructura REAL
 -- =====================================================
 
 USE gestion_clientes_jp;
 
+-- =====================================================
+-- CREAR TABLAS DE AUDITORÍA
+-- =====================================================
+
+-- Tabla de auditoría para cliente
+CREATE TABLE IF NOT EXISTS auditoria_cliente (
+    id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
+    ruc CHAR(11) NOT NULL,
+    tipo_operacion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    usuario VARCHAR(100),
+    fecha_operacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    datos_anteriores TEXT,
+    datos_nuevos TEXT,
+    observaciones VARCHAR(200),
+    INDEX idx_ruc (ruc),
+    INDEX idx_fecha (fecha_operacion)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabla de auditoría para empleado
+CREATE TABLE IF NOT EXISTS auditoria_empleado (
+    id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
+    codigo INT NOT NULL,
+    tipo_operacion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    usuario VARCHAR(100),
+    fecha_operacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    datos_anteriores TEXT,
+    datos_nuevos TEXT,
+    observaciones VARCHAR(200),
+    INDEX idx_codigo (codigo),
+    INDEX idx_fecha (fecha_operacion)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabla de auditoría para archivo_excel
+CREATE TABLE IF NOT EXISTS auditoria_archivo_excel (
+    id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    tipo_operacion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    usuario VARCHAR(100),
+    fecha_operacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    datos_anteriores TEXT,
+    datos_nuevos TEXT,
+    observaciones VARCHAR(200),
+    INDEX idx_nombre (nombre),
+    INDEX idx_fecha (fecha_operacion)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 DELIMITER $$
 
 -- =====================================================
--- TRIGGERS PARA TABLA: cliente
+-- TRIGGERS PARA: cliente
 -- =====================================================
 
--- Trigger: Auditar INSERT en cliente
-DROP TRIGGER IF EXISTS trg_auditoria_cliente_insert$$
-CREATE TRIGGER trg_auditoria_cliente_insert
+-- Trigger: INSERT en cliente
+DROP TRIGGER IF EXISTS trg_cliente_insert$$
+CREATE TRIGGER trg_cliente_insert
 AFTER INSERT ON cliente
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria_cliente (
-        id_cliente,
-        tipo_operacion,
-        usuario,
-        datos_nuevos,
-        observaciones
-    ) VALUES (
-        NEW.id_cliente,
+    INSERT INTO auditoria_cliente (ruc, tipo_operacion, usuario, datos_nuevos, observaciones)
+    VALUES (
+        NEW.ruc,
         'INSERT',
         USER(),
-        JSON_OBJECT(
-            'id_cliente', NEW.id_cliente,
-            'ruc', NEW.ruc,
-            'razon_social', NEW.razon_social,
-            'nombre_comercial', NEW.nombre_comercial,
-            'direccion', NEW.direccion,
-            'distrito', NEW.distrito,
-            'provincia', NEW.provincia,
-            'departamento', NEW.departamento,
-            'telefono', NEW.telefono,
-            'email', NEW.email,
-            'estado', NEW.estado
+        CONCAT(
+            'RUC: ', NEW.ruc, ', ',
+            'Nombres: ', NEW.nombres, ' ', NEW.apellido_paterno, ' ', NEW.apellido_materno, ', ',
+            'Email: ', IFNULL(NEW.correo_electronico, 'N/A'), ', ',
+            'Teléfono: ', IFNULL(NEW.telefono, 'N/A')
         ),
-        'Nuevo cliente registrado'
+        'Cliente registrado'
     );
 END$$
 
--- Trigger: Auditar UPDATE en cliente
-DROP TRIGGER IF EXISTS trg_auditoria_cliente_update$$
-CREATE TRIGGER trg_auditoria_cliente_update
+-- Trigger: UPDATE en cliente
+DROP TRIGGER IF EXISTS trg_cliente_update$$
+CREATE TRIGGER trg_cliente_update
 AFTER UPDATE ON cliente
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria_cliente (
-        id_cliente,
-        tipo_operacion,
-        usuario,
-        datos_anteriores,
-        datos_nuevos,
-        observaciones
-    ) VALUES (
-        NEW.id_cliente,
+    INSERT INTO auditoria_cliente (ruc, tipo_operacion, usuario, datos_anteriores, datos_nuevos, observaciones)
+    VALUES (
+        NEW.ruc,
         'UPDATE',
         USER(),
-        JSON_OBJECT(
-            'id_cliente', OLD.id_cliente,
-            'ruc', OLD.ruc,
-            'razon_social', OLD.razon_social,
-            'nombre_comercial', OLD.nombre_comercial,
-            'direccion', OLD.direccion,
-            'distrito', OLD.distrito,
-            'provincia', OLD.provincia,
-            'departamento', OLD.departamento,
-            'telefono', OLD.telefono,
-            'email', OLD.email,
-            'estado', OLD.estado
+        CONCAT(
+            'Nombres: ', OLD.nombres, ' ', OLD.apellido_paterno, ' ', OLD.apellido_materno, ', ',
+            'Email: ', IFNULL(OLD.correo_electronico, 'N/A'), ', ',
+            'Teléfono: ', IFNULL(OLD.telefono, 'N/A')
         ),
-        JSON_OBJECT(
-            'id_cliente', NEW.id_cliente,
-            'ruc', NEW.ruc,
-            'razon_social', NEW.razon_social,
-            'nombre_comercial', NEW.nombre_comercial,
-            'direccion', NEW.direccion,
-            'distrito', NEW.distrito,
-            'provincia', NEW.provincia,
-            'departamento', NEW.departamento,
-            'telefono', NEW.telefono,
-            'email', NEW.email,
-            'estado', NEW.estado
+        CONCAT(
+            'Nombres: ', NEW.nombres, ' ', NEW.apellido_paterno, ' ', NEW.apellido_materno, ', ',
+            'Email: ', IFNULL(NEW.correo_electronico, 'N/A'), ', ',
+            'Teléfono: ', IFNULL(NEW.telefono, 'N/A')
         ),
         'Cliente actualizado'
     );
 END$$
 
--- Trigger: Auditar DELETE en cliente
-DROP TRIGGER IF EXISTS trg_auditoria_cliente_delete$$
-CREATE TRIGGER trg_auditoria_cliente_delete
+-- Trigger: DELETE en cliente
+DROP TRIGGER IF EXISTS trg_cliente_delete$$
+CREATE TRIGGER trg_cliente_delete
 BEFORE DELETE ON cliente
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria_cliente (
-        id_cliente,
-        tipo_operacion,
-        usuario,
-        datos_anteriores,
-        observaciones
-    ) VALUES (
-        OLD.id_cliente,
+    INSERT INTO auditoria_cliente (ruc, tipo_operacion, usuario, datos_anteriores, observaciones)
+    VALUES (
+        OLD.ruc,
         'DELETE',
         USER(),
-        JSON_OBJECT(
-            'id_cliente', OLD.id_cliente,
-            'ruc', OLD.ruc,
-            'razon_social', OLD.razon_social,
-            'nombre_comercial', OLD.nombre_comercial,
-            'direccion', OLD.direccion,
-            'estado', OLD.estado
+        CONCAT(
+            'Nombres: ', OLD.nombres, ' ', OLD.apellido_paterno, ' ', OLD.apellido_materno, ', ',
+            'Email: ', IFNULL(OLD.correo_electronico, 'N/A')
         ),
         'Cliente eliminado'
     );
 END$$
 
 -- =====================================================
--- TRIGGERS PARA TABLA: empleado
+-- TRIGGERS PARA: empleado
 -- =====================================================
 
--- Tabla de auditoría para empleados
-DROP TABLE IF EXISTS auditoria_empleado$$
-CREATE TABLE auditoria_empleado (
-    id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
-    id_empleado INT NOT NULL,
-    tipo_operacion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
-    usuario VARCHAR(100),
-    fecha_operacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    datos_anteriores JSON,
-    datos_nuevos JSON,
-    observaciones TEXT,
-    INDEX idx_empleado (id_empleado),
-    INDEX idx_fecha (fecha_operacion)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4$$
-
--- Trigger: Auditar INSERT en empleado
-DROP TRIGGER IF EXISTS trg_auditoria_empleado_insert$$
-CREATE TRIGGER trg_auditoria_empleado_insert
+-- Trigger: INSERT en empleado
+DROP TRIGGER IF EXISTS trg_empleado_insert$$
+CREATE TRIGGER trg_empleado_insert
 AFTER INSERT ON empleado
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria_empleado (
-        id_empleado,
-        tipo_operacion,
-        usuario,
-        datos_nuevos,
-        observaciones
-    ) VALUES (
-        NEW.id_empleado,
+    INSERT INTO auditoria_empleado (codigo, tipo_operacion, usuario, datos_nuevos, observaciones)
+    VALUES (
+        NEW.codigo,
         'INSERT',
         USER(),
-        JSON_OBJECT(
-            'id_empleado', NEW.id_empleado,
-            'dni', NEW.dni,
-            'nombres', NEW.nombres,
-            'apellido_paterno', NEW.apellido_paterno,
-            'apellido_materno', NEW.apellido_materno,
-            'cargo', NEW.cargo,
-            'area', NEW.area,
-            'salario', NEW.salario,
-            'estado', NEW.estado
+        CONCAT(
+            'Código: ', NEW.codigo, ', ',
+            'Nombres: ', NEW.nombres, ' ', NEW.apellido_paterno, ' ', NEW.apellido_materno, ', ',
+            'Cargo: ', NEW.cargo, ', ',
+            'Sexo: ', NEW.sexo, ', ',
+            'Cliente asignado: ', IFNULL(NEW.ruc_cliente, 'N/A')
         ),
-        'Nuevo empleado registrado'
+        'Empleado registrado'
     );
 END$$
 
--- Trigger: Auditar UPDATE en empleado
-DROP TRIGGER IF EXISTS trg_auditoria_empleado_update$$
-CREATE TRIGGER trg_auditoria_empleado_update
+-- Trigger: UPDATE en empleado
+DROP TRIGGER IF EXISTS trg_empleado_update$$
+CREATE TRIGGER trg_empleado_update
 AFTER UPDATE ON empleado
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria_empleado (
-        id_empleado,
-        tipo_operacion,
-        usuario,
-        datos_anteriores,
-        datos_nuevos,
-        observaciones
-    ) VALUES (
-        NEW.id_empleado,
+    INSERT INTO auditoria_empleado (codigo, tipo_operacion, usuario, datos_anteriores, datos_nuevos, observaciones)
+    VALUES (
+        NEW.codigo,
         'UPDATE',
         USER(),
-        JSON_OBJECT(
-            'id_empleado', OLD.id_empleado,
-            'dni', OLD.dni,
-            'nombres', OLD.nombres,
-            'cargo', OLD.cargo,
-            'area', OLD.area,
-            'salario', OLD.salario,
-            'estado', OLD.estado
+        CONCAT(
+            'Cargo: ', OLD.cargo, ', ',
+            'Cliente: ', IFNULL(OLD.ruc_cliente, 'N/A')
         ),
-        JSON_OBJECT(
-            'id_empleado', NEW.id_empleado,
-            'dni', NEW.dni,
-            'nombres', NEW.nombres,
-            'cargo', NEW.cargo,
-            'area', NEW.area,
-            'salario', NEW.salario,
-            'estado', NEW.estado
+        CONCAT(
+            'Cargo: ', NEW.cargo, ', ',
+            'Cliente: ', IFNULL(NEW.ruc_cliente, 'N/A')
         ),
         'Empleado actualizado'
     );
 END$$
 
--- Trigger: Auditar DELETE en empleado
-DROP TRIGGER IF EXISTS trg_auditoria_empleado_delete$$
-CREATE TRIGGER trg_auditoria_empleado_delete
+-- Trigger: DELETE en empleado
+DROP TRIGGER IF EXISTS trg_empleado_delete$$
+CREATE TRIGGER trg_empleado_delete
 BEFORE DELETE ON empleado
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria_empleado (
-        id_empleado,
-        tipo_operacion,
-        usuario,
-        datos_anteriores,
-        observaciones
-    ) VALUES (
-        OLD.id_empleado,
+    INSERT INTO auditoria_empleado (codigo, tipo_operacion, usuario, datos_anteriores, observaciones)
+    VALUES (
+        OLD.codigo,
         'DELETE',
         USER(),
-        JSON_OBJECT(
-            'id_empleado', OLD.id_empleado,
-            'dni', OLD.dni,
-            'nombres', OLD.nombres,
-            'cargo', OLD.cargo,
-            'estado', OLD.estado
+        CONCAT(
+            'Nombres: ', OLD.nombres, ' ', OLD.apellido_paterno, ' ', OLD.apellido_materno, ', ',
+            'Cargo: ', OLD.cargo
         ),
         'Empleado eliminado'
     );
 END$$
 
 -- =====================================================
--- TRIGGERS PARA TABLA: consulta_sunat
+-- TRIGGERS PARA: archivo_excel_gestion_clientes
 -- =====================================================
 
--- Tabla de auditoría para consultas SUNAT
-DROP TABLE IF EXISTS auditoria_consulta_sunat$$
-CREATE TABLE auditoria_consulta_sunat (
-    id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
-    id_consulta INT NOT NULL,
-    tipo_operacion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
-    usuario VARCHAR(100),
-    fecha_operacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    datos_anteriores JSON,
-    datos_nuevos JSON,
-    observaciones TEXT,
-    INDEX idx_consulta (id_consulta),
-    INDEX idx_fecha (fecha_operacion)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4$$
-
--- Trigger: Auditar INSERT en consulta_sunat
-DROP TRIGGER IF EXISTS trg_auditoria_consulta_sunat_insert$$
-CREATE TRIGGER trg_auditoria_consulta_sunat_insert
-AFTER INSERT ON consulta_sunat
-FOR EACH ROW
-BEGIN
-    INSERT INTO auditoria_consulta_sunat (
-        id_consulta,
-        tipo_operacion,
-        usuario,
-        datos_nuevos,
-        observaciones
-    ) VALUES (
-        NEW.id_consulta,
-        'INSERT',
-        USER(),
-        JSON_OBJECT(
-            'id_consulta', NEW.id_consulta,
-            'ruc_consultado', NEW.ruc_consultado,
-            'tipo_consulta', NEW.tipo_consulta,
-            'estado_sunat', NEW.estado_sunat,
-            'condicion_sunat', NEW.condicion_sunat
-        ),
-        'Nueva consulta SUNAT registrada'
-    );
-END$$
-
--- Trigger: Auditar DELETE en consulta_sunat
-DROP TRIGGER IF EXISTS trg_auditoria_consulta_sunat_delete$$
-CREATE TRIGGER trg_auditoria_consulta_sunat_delete
-BEFORE DELETE ON consulta_sunat
-FOR EACH ROW
-BEGIN
-    INSERT INTO auditoria_consulta_sunat (
-        id_consulta,
-        tipo_operacion,
-        usuario,
-        datos_anteriores,
-        observaciones
-    ) VALUES (
-        OLD.id_consulta,
-        'DELETE',
-        USER(),
-        JSON_OBJECT(
-            'id_consulta', OLD.id_consulta,
-            'ruc_consultado', OLD.ruc_consultado,
-            'tipo_consulta', OLD.tipo_consulta
-        ),
-        'Consulta SUNAT eliminada'
-    );
-END$$
-
--- =====================================================
--- TRIGGERS PARA TABLA: archivo_excel_gestion_clientes
--- =====================================================
-
--- Tabla de auditoría para archivos Excel
-DROP TABLE IF EXISTS auditoria_archivo_excel$$
-CREATE TABLE auditoria_archivo_excel (
-    id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
-    id_archivo INT NOT NULL,
-    tipo_operacion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
-    usuario VARCHAR(100),
-    fecha_operacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    datos_anteriores JSON,
-    datos_nuevos JSON,
-    observaciones TEXT,
-    INDEX idx_archivo (id_archivo),
-    INDEX idx_fecha (fecha_operacion)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4$$
-
--- Trigger: Auditar INSERT en archivo_excel_gestion_clientes
-DROP TRIGGER IF EXISTS trg_auditoria_archivo_excel_insert$$
-CREATE TRIGGER trg_auditoria_archivo_excel_insert
+-- Trigger: INSERT en archivo_excel
+DROP TRIGGER IF EXISTS trg_archivo_excel_insert$$
+CREATE TRIGGER trg_archivo_excel_insert
 AFTER INSERT ON archivo_excel_gestion_clientes
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria_archivo_excel (
-        id_archivo,
-        tipo_operacion,
-        usuario,
-        datos_nuevos,
-        observaciones
-    ) VALUES (
-        NEW.id_archivo,
+    INSERT INTO auditoria_archivo_excel (nombre, tipo_operacion, usuario, datos_nuevos, observaciones)
+    VALUES (
+        NEW.nombre,
         'INSERT',
         USER(),
-        JSON_OBJECT(
-            'id_archivo', NEW.id_archivo,
-            'nombre_archivo', NEW.nombre_archivo,
-            'tipo_operacion', NEW.tipo_operacion,
-            'estado_procesamiento', NEW.estado_procesamiento
+        CONCAT(
+            'Archivo: ', NEW.nombre, ', ',
+            'Fecha creación: ', NEW.fecha_creacion
         ),
-        'Nuevo archivo Excel registrado'
+        'Archivo registrado'
     );
 END$$
 
--- Trigger: Auditar UPDATE en archivo_excel_gestion_clientes
-DROP TRIGGER IF EXISTS trg_auditoria_archivo_excel_update$$
-CREATE TRIGGER trg_auditoria_archivo_excel_update
+-- Trigger: UPDATE en archivo_excel
+DROP TRIGGER IF EXISTS trg_archivo_excel_update$$
+CREATE TRIGGER trg_archivo_excel_update
 AFTER UPDATE ON archivo_excel_gestion_clientes
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria_archivo_excel (
-        id_archivo,
-        tipo_operacion,
-        usuario,
-        datos_anteriores,
-        datos_nuevos,
-        observaciones
-    ) VALUES (
-        NEW.id_archivo,
+    INSERT INTO auditoria_archivo_excel (nombre, tipo_operacion, usuario, datos_anteriores, datos_nuevos, observaciones)
+    VALUES (
+        NEW.nombre,
         'UPDATE',
         USER(),
-        JSON_OBJECT(
-            'estado_procesamiento', OLD.estado_procesamiento,
-            'registros_procesados', OLD.registros_procesados
-        ),
-        JSON_OBJECT(
-            'estado_procesamiento', NEW.estado_procesamiento,
-            'registros_procesados', NEW.registros_procesados
-        ),
-        'Archivo Excel actualizado'
+        CONCAT('Fecha modificación: ', OLD.fecha_modificacion),
+        CONCAT('Fecha modificación: ', NEW.fecha_modificacion),
+        'Archivo actualizado'
+    );
+END$$
+
+-- Trigger: DELETE en archivo_excel
+DROP TRIGGER IF EXISTS trg_archivo_excel_delete$$
+CREATE TRIGGER trg_archivo_excel_delete
+BEFORE DELETE ON archivo_excel_gestion_clientes
+FOR EACH ROW
+BEGIN
+    INSERT INTO auditoria_archivo_excel (nombre, tipo_operacion, usuario, datos_anteriores, observaciones)
+    VALUES (
+        OLD.nombre,
+        'DELETE',
+        USER(),
+        CONCAT('Archivo: ', OLD.nombre),
+        'Archivo eliminado'
     );
 END$$
 
@@ -385,4 +251,6 @@ DELIMITER ;
 -- =====================================================
 -- MENSAJE DE CONFIRMACIÓN
 -- =====================================================
-SELECT 'Triggers de auditoría creados exitosamente' AS Mensaje;
+SELECT '✓✓✓ Triggers creados exitosamente ✓✓✓' AS Mensaje;
+SELECT '✓ 3 Tablas de auditoría creadas' AS Mensaje;
+SELECT '✓ 9 Triggers activados (INSERT, UPDATE, DELETE)' AS Mensaje;

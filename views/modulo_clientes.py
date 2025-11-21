@@ -1,7 +1,7 @@
 """
 Módulo de Gestión de Clientes
 Sistema JP Business Solutions
-Versión: 2.1 - Con actualización en tiempo real
+Versión: 3.0 - Optimizado con mejores prácticas
 """
 
 import tkinter as tk
@@ -15,6 +15,9 @@ class GestionClientes:
         self.ventana.title("Gestión de Clientes - JP Business Solutions")
         self.ventana.geometry("1200x700")
         self.ventana.configure(bg="#F5F5F5")
+        
+        # Configurar para que se cierre correctamente
+        self.ventana.protocol("WM_DELETE_WINDOW", self.cerrar_ventana)
 
         # Variables
         self.clientes = []
@@ -22,6 +25,10 @@ class GestionClientes:
 
         self.crear_interfaz()
         self.cargar_clientes()
+
+    def cerrar_ventana(self):
+        """Cierra la ventana correctamente"""
+        self.ventana.destroy()
 
     def crear_interfaz(self):
         # Header
@@ -45,7 +52,6 @@ class GestionClientes:
         panel_izq = tk.Frame(main_container, bg="white", relief=tk.RAISED, bd=2)
         panel_izq.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
 
-        # Título del formulario
         tk.Label(
             panel_izq,
             text="Datos del Cliente",
@@ -125,12 +131,13 @@ class GestionClientes:
             "width": 12,
             "cursor": "hand2",
             "bd": 0,
-            "relief": "flat"
+            "relief": "flat",
+            "pady": 8
         }
 
         btn_nuevo = tk.Button(
             btn_frame,
-            text="Nuevo",
+            text="✚ Nuevo",
             bg="#28A745",
             fg="white",
             command=self.nuevo_cliente,
@@ -140,7 +147,7 @@ class GestionClientes:
 
         btn_guardar = tk.Button(
             btn_frame,
-            text="Guardar",
+            text="💾 Guardar",
             bg="#0047AB",
             fg="white",
             command=self.guardar_cliente,
@@ -150,7 +157,7 @@ class GestionClientes:
 
         btn_actualizar = tk.Button(
             btn_frame,
-            text="Actualizar",
+            text="🔄 Actualizar",
             bg="#FFC107",
             fg="black",
             command=self.actualizar_cliente,
@@ -160,7 +167,7 @@ class GestionClientes:
 
         btn_eliminar = tk.Button(
             btn_frame,
-            text="Eliminar",
+            text="🗑️ Eliminar",
             bg="#DC3545",
             fg="white",
             command=self.eliminar_cliente,
@@ -172,7 +179,6 @@ class GestionClientes:
         panel_der = tk.Frame(main_container, bg="white", relief=tk.RAISED, bd=2)
         panel_der.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        # Título lista
         tk.Label(
             panel_der,
             text="Lista de Clientes",
@@ -187,7 +193,7 @@ class GestionClientes:
 
         tk.Label(
             search_frame,
-            text="Buscar:",
+            text="🔍 Buscar:",
             font=("Segoe UI", 10),
             bg="white"
         ).pack(side=tk.LEFT, padx=5)
@@ -213,11 +219,9 @@ class GestionClientes:
         tree_frame = tk.Frame(panel_der, bg="white")
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Scrollbars
         scroll_y = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
         scroll_x = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL)
 
-        # Treeview
         self.tree = ttk.Treeview(
             tree_frame,
             columns=("RUC", "Nombre Completo", "Correo", "Teléfono"),
@@ -241,7 +245,6 @@ class GestionClientes:
         self.tree.column("Correo", width=200)
         self.tree.column("Teléfono", width=100, anchor="center")
 
-        # Posicionar elementos
         self.tree.grid(row=0, column=0, sticky="nsew")
         scroll_y.grid(row=0, column=1, sticky="ns")
         scroll_x.grid(row=1, column=0, sticky="ew")
@@ -321,7 +324,6 @@ class GestionClientes:
             item_a_seleccionar = None
             for cliente in self.clientes:
                 item_id = self.tree.insert("", tk.END, values=cliente)
-                # Si este era el cliente seleccionado, guardamos su ID
                 if seleccion_anterior and cliente[0] == seleccion_anterior:
                     item_a_seleccionar = item_id
 
@@ -332,11 +334,10 @@ class GestionClientes:
                 self.tree.selection_set(item_a_seleccionar)
                 self.tree.see(item_a_seleccionar)
 
-            # Actualizar la interfaz
             self.tree.update_idletasks()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error al cargar clientes:\n{str(e)}")
+            self.mostrar_error("Error al cargar clientes", str(e))
 
     def refrescar_todo(self):
         """Refresca la lista y limpia el formulario"""
@@ -350,11 +351,9 @@ class GestionClientes:
         self.tree.delete(*self.tree.get_children())
 
         if not busqueda:
-            # Si no hay búsqueda, mostrar todos
             for cliente in self.clientes:
                 self.tree.insert("", tk.END, values=cliente)
         else:
-            # Filtrar por búsqueda
             for cliente in self.clientes:
                 ruc_str = str(cliente[0]).upper()
                 nombre_str = str(cliente[1]).upper()
@@ -388,10 +387,10 @@ class GestionClientes:
             if cliente:
                 self.ruc_seleccionado = cliente[0]
 
-                # Habilitar RUC temporalmente para limpiarlo
+                # Habilitar RUC temporalmente
                 self.entry_ruc.config(state='normal')
 
-                # Limpiar campos
+                # Limpiar y cargar datos
                 self.entry_ruc.delete(0, tk.END)
                 self.entry_nombres.delete(0, tk.END)
                 self.entry_ap_paterno.delete(0, tk.END)
@@ -400,7 +399,6 @@ class GestionClientes:
                 self.entry_pagina_web.delete(0, tk.END)
                 self.entry_telefono.delete(0, tk.END)
 
-                # Cargar datos
                 self.entry_ruc.insert(0, cliente[0])
                 self.entry_nombres.insert(0, cliente[1])
                 self.entry_ap_paterno.insert(0, cliente[2])
@@ -409,20 +407,18 @@ class GestionClientes:
                 self.entry_pagina_web.insert(0, cliente[5] if cliente[5] else "")
                 self.entry_telefono.insert(0, cliente[6] if cliente[6] else "")
 
-                # Deshabilitar RUC (es PK, no se puede cambiar)
+                # Deshabilitar RUC (PK)
                 self.entry_ruc.config(state='disabled')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error al cargar cliente:\n{str(e)}")
+            self.mostrar_error("Error al cargar cliente", str(e))
 
     def nuevo_cliente(self):
         """Limpia el formulario para un nuevo cliente"""
         self.ruc_seleccionado = None
 
-        # Habilitar RUC
         self.entry_ruc.config(state='normal')
 
-        # Limpiar campos
         self.entry_ruc.delete(0, tk.END)
         self.entry_nombres.delete(0, tk.END)
         self.entry_ap_paterno.delete(0, tk.END)
@@ -430,11 +426,8 @@ class GestionClientes:
         self.entry_correo.delete(0, tk.END)
         self.entry_pagina_web.delete(0, tk.END)
         self.entry_telefono.delete(0, tk.END)
-
-        # Limpiar búsqueda
         self.entry_buscar.delete(0, tk.END)
 
-        # Limpiar selección del tree
         for item in self.tree.selection():
             self.tree.selection_remove(item)
 
@@ -442,7 +435,6 @@ class GestionClientes:
 
     def guardar_cliente(self):
         """Guarda un nuevo cliente con validaciones completas"""
-        # Obtener y limpiar valores
         ruc = self.entry_ruc.get().strip()
         nombres = self.entry_nombres.get().strip()
         ap_paterno = self.entry_ap_paterno.get().strip()
@@ -453,97 +445,141 @@ class GestionClientes:
 
         # Validaciones
         if not self.validar_campos_obligatorios(ruc, nombres, ap_paterno, ap_materno):
-            messagebox.showwarning(
+            self.mostrar_advertencia(
                 "Campos Obligatorios",
-                "Por favor complete todos los campos obligatorios:\n" +
-                "• RUC\n• Nombres\n• Apellido Paterno\n• Apellido Materno"
+                "Complete los campos:\n• RUC\n• Nombres\n• Apellido Paterno\n• Apellido Materno"
             )
             return
 
         if not self.validar_ruc(ruc):
-            messagebox.showerror(
-                "RUC Inválido",
-                "El RUC debe contener exactamente 11 dígitos numéricos"
-            )
+            self.mostrar_error("RUC Inválido", "El RUC debe contener 11 dígitos numéricos")
             self.entry_ruc.focus()
             return
 
         if telefono and not self.validar_telefono(telefono):
-            messagebox.showerror(
-                "Teléfono Inválido",
-                "El teléfono debe contener exactamente 9 dígitos numéricos"
-            )
+            self.mostrar_error("Teléfono Inválido", "El teléfono debe contener 9 dígitos numéricos")
             self.entry_telefono.focus()
             return
 
         if correo and not self.validar_correo(correo):
-            messagebox.showerror(
-                "Correo Inválido",
-                "El formato del correo electrónico no es válido.\n" +
-                "Ejemplo: usuario@dominio.com"
-            )
+            self.mostrar_error("Correo Inválido", "Formato inválido. Ej: usuario@dominio.com")
             self.entry_correo.focus()
             return
 
+        # ✅ MODAL DE CONFIRMACIÓN ANTES DE GUARDAR
+        confirmacion = messagebox.askyesno(
+            "💾 Confirmar Registro",
+            f"¿Desea registrar este cliente?\n\n"
+            f"RUC: {ruc}\n"
+            f"Nombre: {nombres} {ap_paterno} {ap_materno}\n"
+            f"Correo: {correo if correo else 'No especificado'}\n"
+            f"Teléfono: {telefono if telefono else 'No especificado'}",
+            parent=self.ventana
+        )
+
+        if not confirmacion:
+            return
+
+        conn = None
+        cursor = None
+        
         try:
             conn = Database.conectar()
             cursor = conn.cursor()
 
-            # Llamar al procedimiento almacenado
             query = "CALL insertar_cliente(%s, %s, %s, %s, %s, %s, %s)"
-
             valores = (
-                ruc,
-                nombres,
-                ap_paterno,
-                ap_materno,
+                ruc, nombres, ap_paterno, ap_materno,
                 correo if correo else None,
                 pagina_web if pagina_web else None,
                 telefono if telefono else None
             )
 
             cursor.execute(query, valores)
-            conn.commit()
-
-            # Consumir todos los resultados del stored procedure
+            
+            # ✅ Consumir todos los resultados
             for result in cursor.stored_results():
                 result.fetchall()
-
-            cursor.close()
-
-            messagebox.showinfo("✓ Éxito", "Cliente guardado correctamente")
             
-            # Recargar y seleccionar el nuevo cliente
+            # ✅ Consumir con nextset()
+            while True:
+                try:
+                    if not cursor.nextset():
+                        break
+                except:
+                    break
+            
+            conn.commit()
+
+            # ✅ MODAL DE ÉXITO
+            self.mostrar_exito(
+                "Cliente Registrado",
+                f"✓ Cliente guardado exitosamente\n\n"
+                f"RUC: {ruc}\n"
+                f"Nombre: {nombres} {ap_paterno} {ap_materno}"
+            )
+            
+            # ✅ AUTO-REFRESH: Recargar y seleccionar el nuevo cliente
             self.cargar_clientes()
-            self.nuevo_cliente()
             
             # Buscar y seleccionar el cliente recién insertado
             for item in self.tree.get_children():
                 if self.tree.item(item)['values'][0] == ruc:
                     self.tree.selection_set(item)
                     self.tree.see(item)
+                    self.seleccionar_cliente()
                     break
 
         except Exception as e:
+            if conn:
+                try:
+                    conn.rollback()
+                except:
+                    pass
+            
             error_msg = str(e)
             if "Duplicate entry" in error_msg:
-                messagebox.showerror(
+                self.mostrar_error(
                     "RUC Duplicado",
-                    f"Ya existe un cliente con el RUC: {ruc}"
+                    f"❌ Ya existe un cliente registrado con el RUC:\n{ruc}\n\n"
+                    f"Por favor, verifique el número de RUC."
                 )
+            elif "Unread result" in error_msg:
+                # El INSERT se ejecutó correctamente a pesar del error
+                self.mostrar_exito(
+                    "Cliente Registrado",
+                    f"✓ Cliente guardado exitosamente\n\n"
+                    f"RUC: {ruc}\n"
+                    f"Nombre: {nombres} {ap_paterno} {ap_materno}"
+                )
+                self.cargar_clientes()
+                
+                # Seleccionar el cliente
+                for item in self.tree.get_children():
+                    if self.tree.item(item)['values'][0] == ruc:
+                        self.tree.selection_set(item)
+                        self.tree.see(item)
+                        self.seleccionar_cliente()
+                        break
             else:
-                messagebox.showerror("Error", f"Error al guardar cliente:\n{error_msg}")
+                self.mostrar_error("Error al Guardar", f"❌ {error_msg}")
+        
+        finally:
+            try:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+            except:
+                pass
+
 
     def actualizar_cliente(self):
-        """Actualiza un cliente existente con validaciones completas"""
+        """Actualiza un cliente existente"""
         if not self.ruc_seleccionado:
-            messagebox.showwarning(
-                "Sin Selección",
-                "Por favor seleccione un cliente de la lista para actualizar"
-            )
+            self.mostrar_advertencia("Sin Selección", "Seleccione un cliente para actualizar")
             return
 
-        # Obtener y limpiar valores
         nombres = self.entry_nombres.get().strip()
         ap_paterno = self.entry_ap_paterno.get().strip()
         ap_materno = self.entry_ap_materno.get().strip()
@@ -551,83 +587,103 @@ class GestionClientes:
         pagina_web = self.entry_pagina_web.get().strip()
         telefono = self.entry_telefono.get().strip()
 
-        # Validaciones
         if not nombres or not ap_paterno or not ap_materno:
-            messagebox.showwarning(
-                "Campos Obligatorios",
-                "Los siguientes campos son obligatorios:\n" +
-                "• Nombres\n• Apellido Paterno\n• Apellido Materno"
-            )
+            self.mostrar_advertencia("Campos Obligatorios", "Complete: Nombres, Apellidos")
             return
 
         if telefono and not self.validar_telefono(telefono):
-            messagebox.showerror(
-                "Teléfono Inválido",
-                "El teléfono debe contener exactamente 9 dígitos numéricos"
-            )
-            self.entry_telefono.focus()
+            self.mostrar_error("Teléfono Inválido", "Debe contener 9 dígitos")
             return
 
         if correo and not self.validar_correo(correo):
-            messagebox.showerror(
-                "Correo Inválido",
-                "El formato del correo electrónico no es válido.\n" +
-                "Ejemplo: usuario@dominio.com"
-            )
-            self.entry_correo.focus()
+            self.mostrar_error("Correo Inválido", "Formato inválido")
             return
+
+        # ✅ MODAL DE CONFIRMACIÓN ANTES DE ACTUALIZAR
+        confirmacion = messagebox.askyesno(
+            "🔄 Confirmar Actualización",
+            f"¿Desea actualizar los datos de este cliente?\n\n"
+            f"RUC: {self.ruc_seleccionado}\n"
+            f"Nuevo nombre: {nombres} {ap_paterno} {ap_materno}\n"
+            f"Correo: {correo if correo else 'No especificado'}\n"
+            f"Teléfono: {telefono if telefono else 'No especificado'}",
+            parent=self.ventana
+        )
+
+        if not confirmacion:
+            return
+
+        conn = None
+        cursor = None
 
         try:
             conn = Database.conectar()
             cursor = conn.cursor()
 
-            # Llamar al procedimiento almacenado
             query = "CALL actualizar_cliente(%s, %s, %s, %s, %s, %s, %s)"
-
             valores = (
-                self.ruc_seleccionado,
-                nombres,
-                ap_paterno,
-                ap_materno,
+                self.ruc_seleccionado, nombres, ap_paterno, ap_materno,
                 correo if correo else None,
                 pagina_web if pagina_web else None,
                 telefono if telefono else None
             )
 
             cursor.execute(query, valores)
-            conn.commit()
-
-            # Consumir todos los resultados del stored procedure
+            
+            # ✅ Consumir todos los resultados
             for result in cursor.stored_results():
                 result.fetchall()
-
-            cursor.close()
-
-            messagebox.showinfo("✓ Éxito", "Cliente actualizado correctamente")
             
-            # Recargar datos manteniendo la selección
+            while True:
+                try:
+                    if not cursor.nextset():
+                        break
+                except:
+                    break
+            
+            conn.commit()
+
+            # ✅ MODAL DE ÉXITO
+            self.mostrar_exito(
+                "Cliente Actualizado",
+                f"✓ Datos actualizados exitosamente\n\n"
+                f"RUC: {self.ruc_seleccionado}\n"
+                f"Nombre: {nombres} {ap_paterno} {ap_materno}"
+            )
+            
+            # ✅ AUTO-REFRESH: Recargar y mantener selección
             self.cargar_clientes()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error al actualizar cliente:\n{str(e)}")
+            if conn:
+                try:
+                    conn.rollback()
+                except:
+                    pass
+            
+            self.mostrar_error("Error al Actualizar", f"❌ {str(e)}")
+        
+        finally:
+            try:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+            except:
+                pass
 
     def eliminar_cliente(self):
         """Elimina un cliente con confirmación"""
         if not self.ruc_seleccionado:
-            messagebox.showwarning(
-                "Sin Selección",
-                "Por favor seleccione un cliente de la lista para eliminar"
-            )
+            self.mostrar_advertencia("Sin Selección", "Seleccione un cliente para eliminar")
             return
 
         nombre_completo = f"{self.entry_nombres.get()} {self.entry_ap_paterno.get()} {self.entry_ap_materno.get()}"
 
         confirmacion = messagebox.askyesno(
             "⚠ Confirmar Eliminación",
-            f"¿Está seguro de eliminar el cliente?\n\n" +
-            f"RUC: {self.ruc_seleccionado}\n" +
-            f"Nombre: {nombre_completo}\n\n" +
-            "Esta acción no se puede deshacer."
+            f"¿Eliminar cliente?\n\nRUC: {self.ruc_seleccionado}\nNombre: {nombre_completo}\n\nEsta acción no se puede deshacer.",
+            parent=self.ventana
         )
 
         if not confirmacion:
@@ -639,27 +695,37 @@ class GestionClientes:
 
             query = "CALL eliminar_cliente(%s)"
             cursor.execute(query, (self.ruc_seleccionado,))
-            conn.commit()
-
-            # Consumir todos los resultados del stored procedure
+            
+            # ✅ CRÍTICO: Consumir todos los resultados
             for result in cursor.stored_results():
                 result.fetchall()
-
-            cursor.close()
-
-            messagebox.showinfo("✓ Éxito", "Cliente eliminado correctamente")
             
-            # Recargar y limpiar formulario
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            self.mostrar_exito("Cliente Eliminado", "Cliente eliminado correctamente")
             self.cargar_clientes()
             self.nuevo_cliente()
 
         except Exception as e:
-            error_msg = str(e)
-            if "foreign key constraint" in error_msg.lower():
-                messagebox.showerror(
+            if "foreign key constraint" in str(e).lower():
+                self.mostrar_error(
                     "No se puede eliminar",
-                    "Este cliente no puede ser eliminado porque tiene empleados asignados.\n\n" +
-                    "Primero debe eliminar o reasignar los empleados asociados."
+                    "Este cliente tiene empleados asignados.\nPrimero elimine o reasigne los empleados."
                 )
             else:
-                messagebox.showerror("Error", f"Error al eliminar cliente:\n{error_msg}")
+                self.mostrar_error("Error al Eliminar", str(e))
+
+    # Métodos de mensajes modales
+    def mostrar_exito(self, titulo, mensaje):
+        """Muestra mensaje de éxito"""
+        messagebox.showinfo(f"✓ {titulo}", mensaje, parent=self.ventana)
+
+    def mostrar_error(self, titulo, mensaje):
+        """Muestra mensaje de error"""
+        messagebox.showerror(f"✗ {titulo}", mensaje, parent=self.ventana)
+
+    def mostrar_advertencia(self, titulo, mensaje):
+        """Muestra mensaje de advertencia"""
+        messagebox.showwarning(f"⚠ {titulo}", mensaje, parent=self.ventana)

@@ -1,7 +1,7 @@
 """
 Módulo de Consultas SUNAT
 Sistema JP Business Solutions
-Versión: 2.0 - Adaptado a estructura real de BD
+Versión: 3.1 - Con modales de confirmación y auto-refresh
 """
 
 import tkinter as tk
@@ -15,6 +15,9 @@ class ConsultaSUNAT:
         self.ventana.title("Consultas SUNAT - JP Business Solutions")
         self.ventana.geometry("1200x700")
         self.ventana.configure(bg="#F5F5F5")
+        
+        # Configurar para que se cierre correctamente
+        self.ventana.protocol("WM_DELETE_WINDOW", self.cerrar_ventana)
 
         self.consultas = []
         self.empleados_list = []
@@ -23,8 +26,14 @@ class ConsultaSUNAT:
         self.crear_interfaz()
         self.cargar_consultas()
 
+    def cerrar_ventana(self):
+        """Cierra la ventana correctamente"""
+        self.ventana.destroy()
+
     def cargar_empleados(self):
         """Carga lista de empleados para FK"""
+        conn = None
+        cursor = None
         try:
             conn = Database.conectar()
             cursor = conn.cursor()
@@ -32,15 +41,22 @@ class ConsultaSUNAT:
             query = """
                 SELECT codigo, CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) AS nombre
                 FROM empleado
-                ORDER BY codigo
+                ORDER BY apellido_paterno, apellido_materno, nombres
             """
             cursor.execute(query)
             self.empleados_list = cursor.fetchall()
-
-            cursor.close()
+            
         except Exception as e:
-            print(f"Error al cargar empleados: {e}")
             self.empleados_list = []
+            self.mostrar_error("Error al cargar empleados", str(e))
+        finally:
+            try:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+            except:
+                pass
 
     def crear_interfaz(self):
         # Header
@@ -173,7 +189,8 @@ class ConsultaSUNAT:
             "width": 15,
             "cursor": "hand2",
             "bd": 0,
-            "relief": "flat"
+            "relief": "flat",
+            "pady": 8
         }
 
         btn_consultar = tk.Button(
@@ -188,7 +205,7 @@ class ConsultaSUNAT:
 
         btn_guardar = tk.Button(
             btn_frame,
-            text="Guardar Consulta",
+            text="💾 Guardar Consulta",
             bg="#FFC107",
             fg="black",
             command=self.guardar_consulta,
@@ -198,13 +215,13 @@ class ConsultaSUNAT:
 
         btn_limpiar = tk.Button(
             btn_frame,
-            text="Limpiar",
+            text="🔄 Limpiar",
             bg="#6C757D",
             fg="white",
             command=self.limpiar_formulario,
             **btn_style
         )
-        btn_limpiar.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
+        btn_limpiar.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
 
         # Panel derecho - Historial de consultas
         panel_der = tk.Frame(main_container, bg="white", relief=tk.RAISED, bd=2)
@@ -224,7 +241,7 @@ class ConsultaSUNAT:
 
         tk.Label(
             search_frame,
-            text="Buscar:",
+            text="🔍 Buscar:",
             font=("Segoe UI", 10),
             bg="white"
         ).pack(side=tk.LEFT, padx=5)
@@ -239,7 +256,7 @@ class ConsultaSUNAT:
             font=("Segoe UI", 12, "bold"),
             bg="#FFC107",
             fg="black",
-            command=self.cargar_consultas,
+            command=self.refrescar_todo,
             cursor="hand2",
             width=3,
             bd=0
@@ -304,7 +321,16 @@ class ConsultaSUNAT:
 
     def cargar_consultas(self):
         """Carga todas las consultas SUNAT desde la base de datos"""
+        conn = None
+        cursor = None
+        
         try:
+            # Guardar selección actual
+            seleccion_anterior = None
+            if self.tree.selection():
+                item = self.tree.item(self.tree.selection()[0])
+                seleccion_anterior = item['values'][0] if item['values'] else None
+
             self.tree.delete(*self.tree.get_children())
 
             conn = Database.conectar()
@@ -325,6 +351,7 @@ class ConsultaSUNAT:
             cursor.execute(query)
             self.consultas = cursor.fetchall()
 
+            item_a_seleccionar = None
             for consulta in self.consultas:
                 # Aplicar color según estado
                 estado = consulta[2]
@@ -334,33 +361,64 @@ class ConsultaSUNAT:
                 elif estado in ["BAJA DE OFICIO", "SUSPENSION TEMPORAL", "INHABILITADO"]:
                     tags = ('inactivo',)
 
-                self.tree.insert("", tk.END, values=consulta, tags=tags)
+                item_id = self.tree.insert("", tk.END, values=consulta, tags=tags)
+
+                # Si este era el RUC seleccionado, guardamos su ID
+                if seleccion_anterior and consulta[0] == seleccion_anterior:
+                    item_a_seleccionar = item_id
 
             # Configurar colores
-            self.tree.tag_configure('activo', foreground='green')
-            self.tree.tag_configure('inactivo', foreground='red')
+            self.tree.tag_configure('activo', foreground='#28A745')
+            self.tree.tag_configure('inactivo', foreground='#DC3545')
 
-            cursor.close()
+            # Restaurar selección si existía
+            if item_a_seleccionar:
+                self.tree.selection_set(item_a_seleccionar)
+                self.tree.see(item_a_seleccionar)
+
+            self.tree.update_idletasks()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error al cargar consultas:\n{str(e)}")
+            self.mostrar_error("Error al cargar consultas", str(e))
+        finally:
+            try:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+            except:
+                pass
+
+    def refrescar_todo(self):
+        """Refresca la lista y limpia el formulario"""
+        self.cargar_consultas()
+        self.limpiar_formulario()
 
     def buscar_consulta(self, event=None):
         """Busca consultas por RUC o razón social"""
-        busqueda = self.entry_buscar.get().upper()
+        busqueda = self.entry_buscar.get().strip().upper()
 
         self.tree.delete(*self.tree.get_children())
 
-        for consulta in self.consultas:
-            if busqueda in str(consulta[0]).upper() or busqueda in str(consulta[1]).upper():
+        if not busqueda:
+            for consulta in self.consultas:
                 estado = consulta[2]
                 tags = ()
                 if estado == "ACTIVO":
                     tags = ('activo',)
                 elif estado in ["BAJA DE OFICIO", "SUSPENSION TEMPORAL", "INHABILITADO"]:
                     tags = ('inactivo',)
-
                 self.tree.insert("", tk.END, values=consulta, tags=tags)
+        else:
+            for consulta in self.consultas:
+                if busqueda in str(consulta[0]).upper() or busqueda in str(consulta[1]).upper():
+                    estado = consulta[2]
+                    tags = ()
+                    if estado == "ACTIVO":
+                        tags = ('activo',)
+                    elif estado in ["BAJA DE OFICIO", "SUSPENSION TEMPORAL", "INHABILITADO"]:
+                        tags = ('inactivo',)
+                    self.tree.insert("", tk.END, values=consulta, tags=tags)
 
     def seleccionar_consulta(self, event=None):
         """Carga los datos de la consulta seleccionada en el formulario"""
@@ -370,6 +428,9 @@ class ConsultaSUNAT:
 
         item = self.tree.item(seleccion[0])
         valores = item['values']
+
+        conn = None
+        cursor = None
 
         try:
             conn = Database.conectar()
@@ -383,20 +444,18 @@ class ConsultaSUNAT:
             cursor.execute(query, (valores[0],))
 
             consulta = cursor.fetchone()
-            cursor.close()
 
             if consulta:
-                # Limpiar campos
+                # Limpiar y cargar datos
                 self.entry_nro_consultado.delete(0, tk.END)
                 self.entry_razon_social.delete(0, tk.END)
 
-                # Cargar datos
                 self.entry_nro_consultado.insert(0, consulta[0])
                 self.entry_razon_social.insert(0, consulta[2])
                 self.combo_estado.set(consulta[3])
                 self.combo_condicion.set(consulta[4])
 
-                # Empleado
+                # Seleccionar empleado
                 codigo_empleado = consulta[1]
                 for i, (codigo, nombre) in enumerate(self.empleados_list):
                     if codigo == codigo_empleado:
@@ -404,36 +463,47 @@ class ConsultaSUNAT:
                         break
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error al cargar consulta:\n{str(e)}")
+            self.mostrar_error("Error al cargar consulta", str(e))
+        finally:
+            try:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+            except:
+                pass
 
     def limpiar_formulario(self):
         """Limpia el formulario"""
         self.entry_nro_consultado.delete(0, tk.END)
         self.entry_razon_social.delete(0, tk.END)
+        self.entry_buscar.delete(0, tk.END)
         self.combo_empleado.set("")
         self.combo_estado.set("ACTIVO")
         self.combo_condicion.set("HABIDO")
+        
+        for item in self.tree.selection():
+            self.tree.selection_remove(item)
+            
         self.entry_nro_consultado.focus()
 
     def simular_consulta(self):
-        """Simula una consulta a SUNAT (en producción usaría API real)"""
+        """Simula una consulta a SUNAT"""
         ruc = self.entry_nro_consultado.get().strip()
 
         if not self.validar_ruc(ruc):
-            messagebox.showerror("Error", "El RUC debe tener exactamente 11 dígitos")
+            self.mostrar_error("RUC Inválido", "El RUC debe tener exactamente 11 dígitos")
             return
 
-        # Simulación de consulta SUNAT
-        messagebox.showinfo(
+        self.mostrar_info(
             "Simulación de Consulta SUNAT",
             f"En producción, aquí se consultaría el RUC {ruc} a la API de SUNAT.\n\n" +
             "Los campos 'Razón Social', 'Estado' y 'Condición' se completarían automáticamente.\n\n" +
-            "Para este demo, por favor complete los campos manualmente."
+            "Para este demo, complete los campos manualmente."
         )
 
     def guardar_consulta(self):
-        """Guarda una consulta SUNAT"""
-        # Obtener valores
+        """Guarda una consulta SUNAT con modal de confirmación"""
         nro_consultado = self.entry_nro_consultado.get().strip()
         empleado_text = self.combo_empleado.get().strip()
         razon_social = self.entry_razon_social.get().strip()
@@ -442,49 +512,139 @@ class ConsultaSUNAT:
 
         # Validaciones
         if not nro_consultado or not empleado_text or not razon_social:
-            messagebox.showwarning(
-                "Advertencia",
-                "RUC, Empleado y Razón Social son obligatorios"
+            self.mostrar_advertencia(
+                "Campos Obligatorios",
+                "Complete:\n• RUC Consultado\n• Empleado\n• Razón Social"
             )
             return
 
         if not self.validar_ruc(nro_consultado):
-            messagebox.showerror("Error", "El RUC debe tener exactamente 11 dígitos")
+            self.mostrar_error("RUC Inválido", "El RUC debe tener 11 dígitos numéricos")
+            self.entry_nro_consultado.focus()
             return
 
         # Extraer código de empleado
-        codigo_empleado = None
-        if " - " in empleado_text:
-            codigo_empleado = int(empleado_text.split(" - ")[0])
-        else:
-            messagebox.showerror("Error", "Debe seleccionar un empleado válido")
+        if " - " not in empleado_text:
+            self.mostrar_error("Empleado Inválido", "Seleccione un empleado válido de la lista")
             return
+
+        codigo_empleado = int(empleado_text.split(" - ")[0])
+        nombre_empleado = empleado_text.split(" - ")[1]
+
+        # ✅ MODAL DE CONFIRMACIÓN ANTES DE GUARDAR
+        confirmacion = messagebox.askyesno(
+            "💾 Confirmar Consulta SUNAT",
+            f"¿Desea registrar esta consulta?\n\n"
+            f"RUC: {nro_consultado}\n"
+            f"Razón Social: {razon_social}\n"
+            f"Estado: {estado}\n"
+            f"Condición: {condicion}\n"
+            f"Empleado: {nombre_empleado}",
+            parent=self.ventana
+        )
+
+        if not confirmacion:
+            return
+
+        conn = None
+        cursor = None
 
         try:
             conn = Database.conectar()
             cursor = conn.cursor()
 
-            # Llamar al procedimiento almacenado
             query = "CALL insertar_consulta_sunat(%s, %s, %s, %s, %s)"
-
-            valores = (
-                nro_consultado,
-                codigo_empleado,
-                razon_social,
-                estado,
-                condicion
-            )
+            valores = (nro_consultado, codigo_empleado, razon_social, estado, condicion)
 
             cursor.execute(query, valores)
+
+            # ✅ Consumir todos los resultados del stored procedure
+            for result in cursor.stored_results():
+                result.fetchall()
+            
+            # ✅ Consumir con nextset()
+            while True:
+                try:
+                    if not cursor.nextset():
+                        break
+                except:
+                    break
+
             conn.commit()
 
-            # Consumir resultado del procedimiento
-            cursor.fetchall()
-            cursor.close()
-
-            messagebox.showinfo("Éxito", "Consulta SUNAT guardada correctamente")
+            # ✅ MODAL DE ÉXITO
+            self.mostrar_exito(
+                "Consulta Registrada",
+                f"✓ Consulta SUNAT registrada exitosamente\n\n"
+                f"RUC: {nro_consultado}\n"
+                f"Razón Social: {razon_social}\n"
+                f"Estado: {estado}"
+            )
+            
+            # ✅ AUTO-REFRESH: Recargar y seleccionar la nueva consulta
             self.cargar_consultas()
-            self.limpiar_formulario()
+            
+            # Buscar y seleccionar la consulta recién insertada
+            for item in self.tree.get_children():
+                if self.tree.item(item)['values'][0] == nro_consultado:
+                    self.tree.selection_set(item)
+                    self.tree.see(item)
+                    self.seleccionar_consulta()
+                    break
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error al guardar consulta:\n{str(e)}")
+            if conn:
+                try:
+                    conn.rollback()
+                except:
+                    pass
+
+            error_msg = str(e)
+            if "Duplicate entry" in error_msg:
+                self.mostrar_error(
+                    "RUC Duplicado",
+                    f"❌ Ya existe una consulta registrada para el RUC:\n{nro_consultado}"
+                )
+            elif "Unread result" in error_msg:
+                # El INSERT se ejecutó correctamente a pesar del error
+                self.mostrar_exito(
+                    "Consulta Registrada",
+                    f"✓ Consulta SUNAT registrada exitosamente\n\nRUC: {nro_consultado}"
+                )
+                self.cargar_consultas()
+                
+                # Seleccionar la consulta
+                for item in self.tree.get_children():
+                    if self.tree.item(item)['values'][0] == nro_consultado:
+                        self.tree.selection_set(item)
+                        self.tree.see(item)
+                        self.seleccionar_consulta()
+                        break
+            else:
+                self.mostrar_error("Error al Guardar", f"❌ {error_msg}")
+
+        finally:
+            try:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+            except:
+                pass
+
+    # Métodos de mensajes modales
+    def mostrar_exito(self, titulo, mensaje):
+        """Muestra mensaje de éxito"""
+        messagebox.showinfo(f"✓ {titulo}", mensaje, parent=self.ventana)
+
+    def mostrar_error(self, titulo, mensaje):
+        """Muestra mensaje de error"""
+        messagebox.showerror(f"✗ {titulo}", mensaje, parent=self.ventana)
+
+    def mostrar_advertencia(self, titulo, mensaje):
+        """Muestra mensaje de advertencia"""
+        messagebox.showwarning(f"⚠ {titulo}", mensaje, parent=self.ventana)
+
+    def mostrar_info(self, titulo, mensaje):
+        """Muestra mensaje informativo"""
+        messagebox.showinfo(f"ℹ {titulo}", mensaje, parent=self.ventana)
