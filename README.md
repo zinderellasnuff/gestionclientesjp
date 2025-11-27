@@ -115,7 +115,7 @@ Centralizar la administración de información empresarial en una aplicación de
 
 ### 1. Clonar el Repositorio
 ```bash
-git clone https://github.com/tuusuario/sistema-gestion.git
+git clone https://github.com/zinderellasnuff/sistema-gestion.git
 cd sistema-gestion
 ```
 
@@ -326,21 +326,27 @@ El sistema incluye **13 procedimientos almacenados** para operaciones CRUD:
 
 ### Pantalla de Login
 <!-- [Insertar captura de pantalla de login] -->
+![Pantalla de Login](img/login.png)
 
 ### Menú Principal
 <!-- [Insertar captura de menú principal con header de usuario] -->
+![Menú Principal](img/principal.png)
 
 ### Módulo de Clientes
 <!-- [Insertar captura del módulo de clientes] -->
+![Módulo de Clientes](img/clientes.png)
 
 ### Módulo de Empleados
 <!-- [Insertar captura del módulo de empleados] -->
+![Módulo de Empleados](img/empleados.png)
 
 ### Consultas SUNAT
 <!-- [Insertar captura de consultas SUNAT con API] -->
+![Consultas SUNAT](img/sunat.png)
 
 ### Reportes
 <!-- [Insertar captura del módulo de reportes] -->
+![Reportes](img/reportes.png)
 
 ---
 
@@ -394,34 +400,12 @@ Para consultas sobre el proyecto, por favor abre un issue en el repositorio.
 
 ---
 
-## 📜 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
-
----
-
 ## 🙏 Agradecimientos
 
 - Comunidad de Python
 - Documentación de Tkinter
 - Colaboradores del proyecto
 - API SUNAT del Perú
-
----
-
-## 🎓 Proyecto Académico
-
-Este sistema fue desarrollado como proyecto académico para la materia de Base de Datos.
-
-**Objetivos cumplidos:**
-- ✅ Diseño de base de datos relacional
-- ✅ Implementación de CRUD
-- ✅ Stored procedures y triggers
-- ✅ Funciones SQL personalizadas
-- ✅ Consultas complejas con JOINs
-- ✅ Integración con APIs externas
-- ✅ Interfaz gráfica de usuario
-- ✅ Sistema de autenticación
 
 ---
 
