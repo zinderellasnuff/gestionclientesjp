@@ -81,3 +81,5 @@ backups/
 # Archivos de test
 test_output/
 *.test
+build/
+LICENSE
