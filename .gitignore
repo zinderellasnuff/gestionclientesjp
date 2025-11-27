@@ -83,3 +83,6 @@ test_output/
 *.test
 build/
 LICENSE
+build/
+dist/
+*.spec
