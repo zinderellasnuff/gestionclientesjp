@@ -1,20 +1,16 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_submodules
 
-datas = []
-binaries = []
-hiddenimports = ['mysql.connector', 'mysql.connector.plugins.mysql_native_password', 'babel', 'babel.numbers', 'babel.dates', 'babel.core']
-tmp_ret = collect_all('babel')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('mysql.connector')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+hiddenimports = ['dotenv', 'mysql.connector', 'mysql.connector.plugins', 'mysql.connector.plugins.mysql_native_password', 'mysql.connector.plugins.caching_sha2_password']
+hiddenimports += collect_submodules('mysql.connector')
+hiddenimports += collect_submodules('dotenv')
 
 
 a = Analysis(
     ['main.py'],
-    pathex=[],
-    binaries=binaries,
-    datas=datas,
+    pathex=['./venv/lib/python3.13/site-packages'],
+    binaries=[],
+    datas=[('img', 'img')],
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
