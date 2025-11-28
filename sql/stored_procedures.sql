@@ -1,6 +1,6 @@
 -- =====================================================
 -- PROCEDIMIENTOS ALMACENADOS - Adaptados a estructura REAL
--- Sistema de Gestión de Clientes JP
+-- Sistema de Gestión Empresarial
 -- Versión: 2.2 - SIN SELECT al final (corrige "Unread result found")
 -- =====================================================
 

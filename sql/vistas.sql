@@ -1,5 +1,5 @@
 -- =====================================================
--- VISTAS - Sistema de Gestión de Clientes JP
+-- VISTAS - Sistema de Gestión Empresarial
 -- Versión: 1.0
 -- =====================================================
 

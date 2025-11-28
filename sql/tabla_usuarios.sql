@@ -1,6 +1,6 @@
 -- ============================================
 -- TABLA DE USUARIOS Y SISTEMA DE AUTENTICACIÓN
--- Sistema de Gestión de Clientes JP
+-- Sistema de Gestión Empresarial
 -- ============================================
 
 USE gestion_clientes_jp;
@@ -25,8 +25,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
 -- Insertar usuarios por defecto
 -- Contraseñas en texto plano por simplicidad (en producción usar bcrypt)
 INSERT INTO usuarios (usuario, password, rol, nombre_completo, email) VALUES
-('admin', 'admin123', 'Administrador', 'Administrador del Sistema', 'admin@jp.com'),
-('contabilidad', 'conta123', 'Contabilidad', 'Usuario Contabilidad', 'contabilidad@jp.com')
+('admin', 'admin123', 'Administrador', 'Administrador del Sistema', 'admin@system.local'),
+('contabilidad', 'conta123', 'Contabilidad', 'Usuario Contabilidad', 'contabilidad@system.local')
 ON DUPLICATE KEY UPDATE
     password = VALUES(password),
     rol = VALUES(rol);

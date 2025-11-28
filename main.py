@@ -119,12 +119,73 @@ class AplicativoJP:
         )
         btn_logout.pack(pady=(5, 8))
 
-        # Contenido principal con sombra
+        # Footer mejorado - ANTES DEL CONTENIDO PARA QUE SE QUEDE FIJO ABAJO
+        footer_frame = tk.Frame(self.root, bg="#E8E8E8", height=50)
+        footer_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        footer_frame.pack_propagate(False)
+
+        footer_content = tk.Frame(footer_frame, bg="#E8E8E8")
+        footer_content.pack(expand=True)
+
+        footer_text = tk.Label(
+            footer_content,
+            text="© 2025 Sistema de Gestión Empresarial | Licencia MIT",
+            font=("Segoe UI", 9),
+            bg="#E8E8E8",
+            fg="#555555"
+        )
+        footer_text.pack(side=tk.LEFT, padx=10)
+
+        status_label = tk.Label(
+            footer_content,
+            text="● Conectado",
+            font=("Segoe UI", 9),
+            bg="#E8E8E8",
+            fg="#28A745"
+        )
+        status_label.pack(side=tk.RIGHT, padx=10)
+
+        # Contenedor con Canvas para scroll
         main_container = tk.Frame(self.root, bg="#F5F5F5")
-        main_container.pack(fill=tk.BOTH, expand=True, padx=30, pady=30)
+        main_container.pack(fill=tk.BOTH, expand=True)
+
+        # Canvas y Scrollbar
+        canvas = tk.Canvas(main_container, bg="#F5F5F5", highlightthickness=0)
+        scrollbar = tk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
+        
+        # Frame scrolleable
+        scrollable_frame = tk.Frame(canvas, bg="#F5F5F5")
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        # Crear window CENTRADO con anchor="n" (centro-superior)
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="n")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Centrar contenido cuando cambia el tamaño del canvas
+        def on_canvas_configure(event):
+            canvas.coords(canvas_window, event.width // 2, 0)
+        
+        canvas.bind('<Configure>', on_canvas_configure)
+        
+        # Mouse wheel para scroll
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        self.root.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Agregar padding al contenido scrolleable
+        content_wrapper = tk.Frame(scrollable_frame, bg="#F5F5F5")
+        content_wrapper.pack(padx=30, pady=30, fill=tk.BOTH, expand=True)
 
         # Bienvenida
-        welcome_frame = tk.Frame(main_container, bg="#F5F5F5")
+        welcome_frame = tk.Frame(content_wrapper, bg="#F5F5F5")
         welcome_frame.pack(pady=(0, 25))
 
         welcome_label = tk.Label(
@@ -146,7 +207,7 @@ class AplicativoJP:
         descripcion.pack(pady=(5, 0))
 
         # Grid de módulos (2 columnas)
-        modules_frame = tk.Frame(main_container, bg="#F5F5F5")
+        modules_frame = tk.Frame(content_wrapper, bg="#F5F5F5")
         modules_frame.pack(pady=10)
 
         # Configurar grid
@@ -212,32 +273,6 @@ class AplicativoJP:
             self.dashboard,
             2, 1
         )
-
-        # Footer mejorado
-        footer_frame = tk.Frame(self.root, bg="#E8E8E8", height=50)
-        footer_frame.pack(fill=tk.X, side=tk.BOTTOM)
-        footer_frame.pack_propagate(False)
-
-        footer_content = tk.Frame(footer_frame, bg="#E8E8E8")
-        footer_content.pack(expand=True)
-
-        footer_text = tk.Label(
-            footer_content,
-            text="© 2025 Sistema de Gestión Empresarial | Licencia MIT",
-            font=("Segoe UI", 9),
-            bg="#E8E8E8",
-            fg="#555555"
-        )
-        footer_text.pack(side=tk.LEFT, padx=10)
-
-        status_label = tk.Label(
-            footer_content,
-            text="● Conectado",
-            font=("Segoe UI", 9),
-            bg="#E8E8E8",
-            fg="#28A745"
-        )
-        status_label.pack(side=tk.RIGHT, padx=10)
 
     def crear_tarjeta_modulo(self, parent, titulo, descripcion, color, comando, fila, columna):
         """Crea una tarjeta visual para cada módulo"""

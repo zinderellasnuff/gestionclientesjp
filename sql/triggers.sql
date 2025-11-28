@@ -1,5 +1,5 @@
 -- =====================================================
--- TRIGGERS - Sistema de Gestión de Clientes JP
+-- TRIGGERS - Sistema de Gestión Empresarial
 -- Versión: 1.0 - Adaptado a estructura REAL
 -- =====================================================
 

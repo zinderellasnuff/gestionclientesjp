@@ -115,8 +115,8 @@ Centralizar la administración de información empresarial en una aplicación de
 
 ### 1. Clonar el Repositorio
 ```bash
-git clone https://github.com/zinderellasnuff/sistema-gestion.git
-cd sistema-gestion
+git clone https://github.com/zinderellasnuff/gestionclientesjp.git
+cd gestionclientesjp
 ```
 
 ### 2. Crear Entorno Virtual

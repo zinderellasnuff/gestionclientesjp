@@ -1,6 +1,6 @@
 -- =====================================================
 -- CONSULTAS SQL DE REPORTES - Adaptadas a estructura REAL
--- Sistema de Gestión de Clientes JP
+-- Sistema de Gestión Empresarial
 -- 13 Consultas implementadas (100% completo)
 -- =====================================================
 

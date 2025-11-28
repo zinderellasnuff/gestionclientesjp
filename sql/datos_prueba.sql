@@ -1,5 +1,5 @@
 -- =====================================================
--- DATOS DE PRUEBA - Sistema de Gestión de Clientes JP
+-- DATOS DE PRUEBA - Sistema de Gestión Empresarial
 -- Versión: 1.0
 -- =====================================================
 
@@ -10,21 +10,21 @@ USE gestion_clientes_jp;
 -- =====================================================
 
 INSERT INTO cliente (ruc, nombres, apellido_paterno, apellido_materno, correo_electronico, pagina_web, telefono) VALUES
-('20100070970', 'Juan Carlos', 'García', 'López', 'jgarcia@empresa1.com', 'www.empresa1.com', '987654321'),
-('20100123456', 'María Elena', 'Rodríguez', 'Sánchez', 'mrodriguez@empresa2.com', 'www.empresa2.com', '987654322'),
-('20100234567', 'Pedro José', 'Martínez', 'Fernández', 'pmartinez@empresa3.com', NULL, '987654323'),
+('20100070970', 'Juan Carlos', 'García', 'López', 'jgarcia@example1.com', 'www.empresa1.com', '987654321'),
+('20100123456', 'María Elena', 'Rodríguez', 'Sánchez', 'mrodriguez@example2.com', 'www.empresa2.com', '987654322'),
+('20100234567', 'Pedro José', 'Martínez', 'Fernández', 'pmartinez@example3.com', NULL, '987654323'),
 ('20100345678', 'Ana Lucía', 'González', 'Torres', NULL, 'www.empresa4.com', '987654324'),
-('20100456789', 'Luis Alberto', 'Pérez', 'Ramírez', 'lperez@empresa5.com', 'www.empresa5.com', '987654325'),
-('20100567890', 'Carmen Rosa', 'López', 'Díaz', 'clopez@empresa6.com', NULL, NULL),
-('20100678901', 'Roberto Carlos', 'Hernández', 'Vargas', 'rhernandez@empresa7.com', 'www.empresa7.com', '987654327'),
+('20100456789', 'Luis Alberto', 'Pérez', 'Ramírez', 'lperez@example5.com', 'www.empresa5.com', '987654325'),
+('20100567890', 'Carmen Rosa', 'López', 'Díaz', 'clopez@example6.com', NULL, NULL),
+('20100678901', 'Roberto Carlos', 'Hernández', 'Vargas', 'rhernandez@example7.com', 'www.empresa7.com', '987654327'),
 ('20100789012', 'Patricia Isabel', 'Flores', 'Castro', NULL, NULL, '987654328'),
-('20100890123', 'Jorge Luis', 'Silva', 'Morales', 'jsilva@empresa9.com', 'www.empresa9.com', '987654329'),
-('20100901234', 'Sofía Mercedes', 'Rojas', 'Gutiérrez', 'srojas@empresa10.com', 'www.empresa10.com', '987654330'),
-('20101012345', 'Fernando Antonio', 'Medina', 'Navarro', 'fmedina@empresa11.com', NULL, '987654331'),
-('20101123456', 'Gabriela Beatriz', 'Castillo', 'Herrera', 'gcastillo@empresa12.com', 'www.empresa12.com', '987654332'),
+('20100890123', 'Jorge Luis', 'Silva', 'Morales', 'jsilva@example9.com', 'www.empresa9.com', '987654329'),
+('20100901234', 'Sofía Mercedes', 'Rojas', 'Gutiérrez', 'srojas@example10.com', 'www.empresa10.com', '987654330'),
+('20101012345', 'Fernando Antonio', 'Medina', 'Navarro', 'fmedina@example11.com', NULL, '987654331'),
+('20101123456', 'Gabriela Beatriz', 'Castillo', 'Herrera', 'gcastillo@example12.com', 'www.empresa12.com', '987654332'),
 ('20101234567', 'Diego Alejandro', 'Reyes', 'Paredes', NULL, 'www.empresa13.com', NULL),
-('20101345678', 'Valentina Lucía', 'Mendoza', 'Chávez', 'vmendoza@empresa14.com', 'www.empresa14.com', '987654334'),
-('20101456789', 'Andrés Felipe', 'Ruiz', 'Domínguez', 'aruiz@empresa15.com', NULL, '987654335');
+('20101345678', 'Valentina Lucía', 'Mendoza', 'Chávez', 'vmendoza@example14.com', 'www.empresa14.com', '987654334'),
+('20101456789', 'Andrés Felipe', 'Ruiz', 'Domínguez', 'aruiz@example15.com', NULL, '987654335');
 
 -- =====================================================
 -- INSERTAR EMPLEADOS DE PRUEBA

@@ -1,5 +1,5 @@
 -- =====================================================
--- SISTEMA DE GESTIÓN DE CLIENTES JP
+-- SISTEMA DE GESTIÓN EMPRESARIAL
 -- Documentación de estructura REAL de base de datos
 -- Versión: 2.0 (Adaptado)
 -- =====================================================

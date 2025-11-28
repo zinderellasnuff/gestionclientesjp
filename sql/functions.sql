@@ -1,5 +1,5 @@
 -- =====================================================
--- FUNCIONES SQL - Sistema de Gestión de Clientes JP
+-- FUNCIONES SQL - Sistema de Gestión Empresarial
 -- Versión: 1.0
 -- =====================================================
 
